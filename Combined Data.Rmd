@@ -1,0 +1,60 @@
+---
+title: "Combination of all Data"
+output: html_notebook
+author: "Anushree Tomar"
+date: "29/01/2019"
+---
+
+
+
+To Combining all the data we need 'DataProcessing.R' file
+```{r}
+
+data_all <- rbind(ahmd,amrt,bgpt,calt,jaip,lknw,ngpr, trch, vrns, fill = TRUE) 
+```
+
+
+Creating a date time column
+```{r}
+
+data_all <- within(data_all, time[time == "24:00"] <- "23:59")
+data_all$datetime <- as.POSIXct(paste(data_all$date,data_all$time), format="%m/%d/%Y %H:%M")
+
+
+```
+
+
+
+We have divided the year into 3 seasons:
+1: Mar, Apr, May , Jun  - Summer
+2: Jul, Aug, sep, Oct - Monsoon
+3: Nov, Dec, Jan, Feb - Winter
+```{r}
+seasons <- rep(c("winter","summer","monsoon"), each = 4)
+names(seasons) <- month.abb[c(11:12,1:10)]
+data_all[,season := seasons[month(datetime)]]
+
+```
+
+
+
+grouping by Location, Month, Season, year and creating a new data frame
+```{r}
+data_final <- data_all[,list(avg_ghi = mean(ghi), avg_dni = mean(dni), avg_dry_bulb = mean(dry_bulb), max_ghi= max(ghi), max_dni =max(dni),max_dry_bulb = max(dry_bulb),min_ghi= min(ghi), min_dni =min(dni),min_dry_bulb = min(dry_bulb)),by = list(code,month(datetime),season,year(datetime))]
+
+```
+
+Subset Data for shiny Input
+```{r}
+amrt<-subset(data_final,data_final$code==420710)
+jaip<-subset(data_final,data_final$code==423480)
+lknw<-subset(data_final,data_final$code==423690)
+vrns<-subset(data_final,data_final$code==424790)
+clct<-subset(data_final,data_final$code==428090)
+ngpr<-subset(data_final,data_final$code==428670)
+bgpt<-subset(data_final,data_final$code==431280)
+trch<-subset(data_final,data_final$code==433440)
+ahmd<-subset(data_final,data_final$code==426470)
+    
+`````
+

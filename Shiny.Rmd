@@ -1,0 +1,196 @@
+---
+title: "Combination of all Data"
+output: html_notebook
+author: "Anushree Tomar"
+date: "29/01/2019"
+---
+
+
+We need 'DataProcessing.R' and 'Combined Data.R' for shiny
+```{r Import Libraries}
+library(plotly)
+library(leaflet)
+library(shiny)
+library(ggplot2)
+library(shinythemes)
+library(magrittr)
+library(dplyr)
+
+```
+
+
+
+
+
+```{r}
+# Define UI for app ----
+ui <- fluidPage(theme=shinytheme("lumen"),
+                
+                
+                # App title ----
+                titlePanel("Average Yearly Solar Irradiance of India"),
+                
+                # Sidebar layout with input and output definitions ----
+                sidebarLayout(
+                  
+                  # Sidebar panel for inputs ----
+                  sidebarPanel(
+                    
+                    # Input: Select a City ----
+                    
+                      selectInput("City", "Choose City For Average Metric :",choices =     c("Cities","Amritsar","Jaipur/Sanganer","Lucknow/Amausi","Varanasi/Babatpur","Ahmadabad"
+                                              ,"Calcutta/Dum Dum","Nagpur/Sonegaon","Begumpet Airport","Tiruchchirapalli")),
+                    
+                    season<- unique(data_final$season), 
+                   selectInput("Season", 
+                   label = "Choose a Season to display",
+                   choices = season),
+                   
+                 
+                    
+                     # Input: Specify the number of observations to view ----
+                    #numericInput("obs", "Number of observations to view:", 10),
+                  
+                    sliderInput("Year","Year:",
+                                value = c(2002,2008),
+                                min=2002,
+                                max=2008),
+                    
+                    
+                    # Input: actionButton() to defer the rendering of output ----
+                    # until the user explicitly clicks the button (rather than
+                    # doing it immediately when inputs change). This is useful if
+                    # the computations required to render output are inordinately
+                    # time-consuming.
+                    actionButton("update", "Update View"),
+                   
+                  
+                    h4("City Location on Map"),
+                    leafletOutput('myMap')
+                    
+                    
+                    
+                  ),
+                  
+                  # Main panel for displaying outputs ----
+                  mainPanel( 
+                    # Output: Header + table of distribution ----
+                    tabsetPanel(type = "tabs",tabPanel("City Data",dataTableOutput("view")),
+                                              tabPanel("Plot",plotlyOutput("plot")))
+                    
+                    #h4("Average Solar Irradiance graph per City"),
+                    
+                   
+                    
+                  )
+                  
+                )
+)
+
+# Define server logic to City Average Solar Irradiance ,view and Download selected dataset ----
+server <- function(input, output,session) {
+  
+ 
+  CityInput <-eventReactive(input$update, {
+    switch(input$City,
+           "Cities"= data_final,       
+           "Amritsar"=amrt,
+           "Jaipur/Sanganer"=jaip,
+           "Lucknow/Amausi"=lknw,
+           "Varanasi/Babatpur"=vrns,
+           "Calcutta/Dum Dum"=calt,
+           "Nagpur/Sonegaon"=ngpr,
+           "Begumpet Airport"=bgpt,
+           "Tiruchchirapalli"=trch,
+           "Ahmdabad"=ahmd)
+    }
+    ,ignoreNULL = FALSE)
+  
+  
+  showseason<-reactive({
+    CityInput() %>% select(year,avg_dni,avg_ghi,avg_dry_bulb,season ) %>% filter(season == input$Season)
+  })
+  
+  
+  #Location on map
+  CityLocationInput<-eventReactive(data_final,{leaflet(data=table_doc)%>% addTiles() %>%
+  addMarkers(~as.numeric(`Grid_Long(E)`), ~as.numeric(`Grid_Lat(N)`), 
+            popup = ~CityInput(), label = ~`ISD_No`)})
+  
+  
+  #Reactive expression
+  Slidervalue<-reactive({
+    data.frame(
+      Name="Year",
+      value=as.character(paste(input$Year,collapse=" ")),
+                                  stringsAsFactors = FALSE)
+                                    
+                              })
+      
+      
+      
+  
+  
+  #leaflet(data = table_doc) %>% addTiles() %>%
+  #addMarkers(~as.numeric(`Grid_Long(E)`), ~as.numeric(`Grid_Lat(N)`), 
+  #           popup = ~`Location_Name`, label = ~`ISD_No`)
+ 
+  
+  
+  
+  
+  #CityLocationInput <- eventReactive(CityInput(),{m <-leaflet()%>%
+  #  addTiles() %>% # Add default OpenStreetMap map tiles
+  #  addMarkers(lng = CityInput()$Long_E,lat = CityInput()$Lat_N)
+ # m
+  
+ # }
+  #,ignoreNULL = FALSE)
+  
+  # Show the first "n" observations ----
+  # The use of isolate() is necessary because we don't want the table
+  # to update whenever input$obs changes (only when the user clicks
+  # the action button)
+  
+ #Graph by city
+  graph<-eventReactive(CityInput(),{
+    
+    p<-ggplot(CityInput(), aes(year ,avg_ghi, colour=season)) + geom_line() + ggtitle("INDIA")
+    ggplotly(p)
+  
+    }
+   )
+  
+  
+  # View Table of selected City ----
+  
+  output$view <- renderDataTable({
+    head(CityInput())
+  })
+  
+  #output$view<-renderTable({
+#    head(CityInput(),isolate(input$Year))
+#  })
+  
+  #season wise plot
+  output$view<-renderDataTable({head(showseason())})
+  
+  output$view<-renderDataTable({head(Slidervalue())})
+  
+  #View City on Map
+  
+   output$myMap <- renderLeaflet(CityLocationInput())
+     
+  #view plot
+   output$plot<-renderPlotly(graph())
+  
+  
+}
+
+# Create Shiny app ----
+
+shinyApp(ui, server)
+
+```
+
+

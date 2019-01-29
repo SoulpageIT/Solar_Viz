@@ -1,0 +1,74 @@
+---
+title: "Data Processing"
+output: html_notebook
+author: "Anushree Tomar"
+date: "29/01/2019"
+---
+
+```{r Import Libraries}
+library(data.table)
+library(tidyverse)
+library(docxtractr)
+```
+
+Extracting the ISD , Longitude and LAtitude from the word doc
+docx file -"india_documentation.docx"
+```{r}
+docu <- read_docx(choose.files())
+docx_describe_tbls(docu)
+table_doc <- docx_extract_tbl(docu)
+colnames(table_doc) <- c("Location_Name", "ISD_No", "ISD_Lat(N)","ISD_Long(E)", "Grid_Lat(N)", "Grid_Long(E)", "Years")
+table_doc <- table_doc[-1,] # Removing the unnecessary rows
+str(table_doc)
+table_doc[5,6] <- 72.75
+
+
+```
+
+Reading all the files location wise
+(All Files in same dir.)
+```{r}
+
+
+files_temp= list.files(pattern = "426470")
+ahmd <- do.call(rbind,lapply(files_temp, fread, select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"), col.names = c("date","time","ghi","dni","dry_bulb")))
+ahmd$code <- "426470"
+
+files_temp = list.files(pattern = "420710")
+amrt <- do.call(rbind,lapply(files_temp, fread, select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"), col.names = c("date","time","ghi","dni","dry_bulb")))
+amrt$code <- "420710"
+
+files_temp = list.files(pattern = "431280")
+bgpt <- do.call(rbind,lapply(files_temp, fread, select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb")))
+bgpt$code <- "431280"
+
+files_temp = list.files(pattern = "428090")
+calt <- do.call(rbind,lapply(files_temp, fread,select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb" )))
+calt$code <- "428090"
+
+files_temp = list.files(pattern = "423480")
+jaip <- do.call(rbind,lapply(files_temp, fread,select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb")))
+jaip$code <- "423480"
+
+files_temp = list.files(pattern = "423690")
+lknw <- do.call(rbind,lapply(files_temp, fread,select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb")))
+lknw$code <- "423690"
+
+files_temp = list.files(pattern = "428670")
+ngpr <- do.call(rbind,lapply(files_temp, fread,select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb")))
+ngpr$code <- "428670"
+
+files_temp = list.files(pattern = "433440")
+trch <- do.call(rbind,lapply(files_temp, fread,select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb")))
+trch$code <- "433440"
+
+files_temp = list.files(pattern = "424790")
+vrns <- do.call(rbind,lapply(files_temp, fread,select = c("Date (MM/DD/YYYY)","Time (HH:MM)","GHI (W/m^2)","DNI (W/m^2)","Dry-bulb (C)"),col.names = c("date","time","ghi","dni","dry_bulb")))
+vrns$code <- "424790"
+
+```
+
+
+
+
+
