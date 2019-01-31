@@ -177,7 +177,4 @@ shinyApp(ui, server)
 ```
 
 
-```{r}
-year
-```
 
