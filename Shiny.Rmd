@@ -19,16 +19,14 @@ library(dplyr)
 ```
 
 
-
-
-
 ```{r}
 # Define UI for app ----
+
 ui <- fluidPage(theme=shinytheme("lumen"),
                 
                 
                 # App title ----
-                titlePanel("Average Yearly Solar Irradiance of India"),
+                titlePanel("Average Solar Irradiance of India"),
                 
                 # Sidebar layout with input and output definitions ----
                 sidebarLayout(
@@ -38,23 +36,24 @@ ui <- fluidPage(theme=shinytheme("lumen"),
                     
                     # Input: Select a City ----
                     
-                      selectInput("City", "Choose City For Average Metric :",choices =     c("Cities","Amritsar","Jaipur/Sanganer","Lucknow/Amausi","Varanasi/Babatpur","Ahmadabad"
-                                              ,"Calcutta/Dum Dum","Nagpur/Sonegaon","Begumpet Airport","Tiruchchirapalli")),
+               selectInput("City", "Choose City For Average Metric :"
+              ,choices =  c("Amritsar","Jaipur/Sanganer","Lucknow/Amausi","Varanasi/Babatpur","Ahmadabad"
+                              ,"Calcutta/Dum Dum","Nagpur/Sonegaon","Begumpet Airport","Tiruchchirapalli")),
                     
-                    season<- unique(data_final$season), 
-                   selectInput("Season", 
-                   label = "Choose a Season to display",
-                   choices = season),
+                   selectInput("Season",
+                   label = "Choose a Season to display:",
+                   choices = c("winter" , "summer",  "monsoon")),
                    
+                   
+                    year<-unique(data_final$year),
+                    sliderInput("Year", "Choose a Year to display:", min=min(year), max=max(year), value=year, step = 1,
+                    ),
                  
                     
                      # Input: Specify the number of observations to view ----
-                    #numericInput("obs", "Number of observations to view:", 10),
+                    numericInput("obs", "Number of observations to view:", 10),
                   
-                    sliderInput("Year","Year:",
-                                value = c(2002,2008),
-                                min=2002,
-                                max=2008),
+                    
                     
                     
                     # Input: actionButton() to defer the rendering of output ----
@@ -75,10 +74,10 @@ ui <- fluidPage(theme=shinytheme("lumen"),
                   # Main panel for displaying outputs ----
                   mainPanel( 
                     # Output: Header + table of distribution ----
-                    tabsetPanel(type = "tabs",tabPanel("City Data",dataTableOutput("view")),
+                    tabsetPanel(type = "tabs",tabPanel("City Data",tableOutput("view")),
                                               tabPanel("Plot",plotlyOutput("plot")))
                     
-                    #h4("Average Solar Irradiance graph per City"),
+                    
                     
                    
                     
@@ -87,13 +86,19 @@ ui <- fluidPage(theme=shinytheme("lumen"),
                 )
 )
 
+```
+
+
+
+```{r}
+
+
 # Define server logic to City Average Solar Irradiance ,view and Download selected dataset ----
 server <- function(input, output,session) {
   
  
   CityInput <-eventReactive(input$update, {
     switch(input$City,
-           "Cities"= data_final,       
            "Amritsar"=amrt,
            "Jaipur/Sanganer"=jaip,
            "Lucknow/Amausi"=lknw,
@@ -111,41 +116,17 @@ server <- function(input, output,session) {
     CityInput() %>% select(year,avg_dni,avg_ghi,avg_dry_bulb,season ) %>% filter(season == input$Season)
   })
   
+  showyear<-reactive({CityInput()%>% select(year,avg_dni,avg_ghi,avg_dry_bulb,season )%>%filter(year==input$Year)})
   
-  #Location on map
-  CityLocationInput<-eventReactive(data_final,{leaflet(data=table_doc)%>% addTiles() %>%
-  addMarkers(~as.numeric(`Grid_Long(E)`), ~as.numeric(`Grid_Lat(N)`), 
-            popup = ~CityInput(), label = ~`ISD_No`)})
+    
+  CityLocationInput <- eventReactive(CityInput(),{m <-leaflet(data=CityInput())%>%
+   addTiles() %>% # Add default OpenStreetMap map tiles
+    addMarkers(lng = ~as.numeric(table_doc[which(table_doc$ISD_No%in%CityInput()$code),"Grid_Long(E)"]),lat =  ~as.numeric(table_doc[which(table_doc$ISD_No%in%CityInput()$code),"Grid_Lat(N)"],popup =code))%>%
+    setView(78.996,20.59,zoom = 4)
+  m
   
-  
-  #Reactive expression
-  Slidervalue<-reactive({
-    data.frame(
-      Name="Year",
-      value=as.character(paste(input$Year,collapse=" ")),
-                                  stringsAsFactors = FALSE)
-                                    
-                              })
-      
-      
-      
-  
-  
-  #leaflet(data = table_doc) %>% addTiles() %>%
-  #addMarkers(~as.numeric(`Grid_Long(E)`), ~as.numeric(`Grid_Lat(N)`), 
-  #           popup = ~`Location_Name`, label = ~`ISD_No`)
- 
-  
-  
-  
-  
-  #CityLocationInput <- eventReactive(CityInput(),{m <-leaflet()%>%
-  #  addTiles() %>% # Add default OpenStreetMap map tiles
-  #  addMarkers(lng = CityInput()$Long_E,lat = CityInput()$Lat_N)
- # m
-  
- # }
-  #,ignoreNULL = FALSE)
+  }
+  ,ignoreNULL = FALSE)
   
   # Show the first "n" observations ----
   # The use of isolate() is necessary because we don't want the table
@@ -164,18 +145,20 @@ server <- function(input, output,session) {
   
   # View Table of selected City ----
   
-  output$view <- renderDataTable({
-    head(CityInput())
+   output$view <- renderTable({
+    head(CityInput(),obs=isolate(input$City))
+  })
+    
+   #season wise Table
+  output$view<-renderTable({
+    head(showseason(),obs=isolate(input$Season))
+    })
+  
+  #year wise Table
+ output$view<-renderTable({
+   head(showyear(),obs=isolate(input$Year))
   })
   
-  #output$view<-renderTable({
-#    head(CityInput(),isolate(input$Year))
-#  })
-  
-  #season wise plot
-  output$view<-renderDataTable({head(showseason())})
-  
-  output$view<-renderDataTable({head(Slidervalue())})
   
   #View City on Map
   
@@ -193,4 +176,8 @@ shinyApp(ui, server)
 
 ```
 
+
+```{r}
+year
+```
 
