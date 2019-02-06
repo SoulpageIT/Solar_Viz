@@ -45,13 +45,13 @@ ui <- fluidPage(theme=shinytheme("lumen"),
                    choices = c("winter" , "summer",  "monsoon")),
                    
                    
-                    year<-unique(data_final$year),
-                    sliderInput("Year", "Choose a Year to display:", min=min(year), max=max(year), value=year, step = 1,
-                    ),
+                    selectInput("Year",
+                   label = "Choose a Year to display:",
+                   choices = unique(data_final$year)),
                  
                     
                      # Input: Specify the number of observations to view ----
-                    numericInput("obs", "Number of observations to view:", 10),
+                    numericInput("obs", "Number of observations to view:", 20),
                   
                     
                     
@@ -103,11 +103,11 @@ server <- function(input, output,session) {
            "Jaipur/Sanganer"=jaip,
            "Lucknow/Amausi"=lknw,
            "Varanasi/Babatpur"=vrns,
-           "Calcutta/Dum Dum"=calt,
+           "Calcutta/Dum Dum"=cact,
            "Nagpur/Sonegaon"=ngpr,
            "Begumpet Airport"=bgpt,
            "Tiruchchirapalli"=trch,
-           "Ahmdabad"=ahmd)
+           "Ahmadabad"=ahmd)
     }
     ,ignoreNULL = FALSE)
   
@@ -136,7 +136,7 @@ server <- function(input, output,session) {
  #Graph by city
   graph<-eventReactive(CityInput(),{
     
-    p<-ggplot(CityInput(), aes(year ,avg_ghi, colour=season)) + geom_line() + ggtitle("INDIA")
+    p<-ggplot(CityInput(), aes(year ,avg_ghi, colour=input$Season)) + geom_line() + ggtitle("India")
     ggplotly(p)
   
     }
