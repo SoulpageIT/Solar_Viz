@@ -7,7 +7,7 @@ date: "29/01/2019"
 
 
 We need 'DataProcessing.R' and 'Combined Data.R' for shiny
-```{r Import Libraries}
+```{r Import Libraries, message=FALSE, warning=FALSE, paged.print=FALSE}
 library(plotly)
 library(leaflet)
 library(shiny)
@@ -41,7 +41,7 @@ ui <- fluidPage(theme=shinytheme("lumen"),
                               ,"Calcutta/Dum Dum","Nagpur/Sonegaon","Begumpet Airport","Tiruchchirapalli")),
                     
                    selectInput("Season",
-                   label = "Choose a Season to display:",
+                   label = "Choose a Season to Plot :",
                    choices = c("winter" , "summer",  "monsoon")),
                    
                    
@@ -49,13 +49,7 @@ ui <- fluidPage(theme=shinytheme("lumen"),
                    label = "Choose a Year to display:",
                    choices = unique(data_final$year)),
                  
-                    
-                     # Input: Specify the number of observations to view ----
-                    numericInput("obs", "Number of observations to view:", 20),
-                  
-                    
-                    
-                    
+                   
                     # Input: actionButton() to defer the rendering of output ----
                     # until the user explicitly clicks the button (rather than
                     # doing it immediately when inputs change). This is useful if
@@ -146,17 +140,17 @@ server <- function(input, output,session) {
   # View Table of selected City ----
   
    output$view <- renderTable({
-    head(CityInput(),obs=isolate(input$City))
+    CityInput()
   })
     
    #season wise Table
   output$view<-renderTable({
-    head(showseason(),obs=isolate(input$Season))
+    showseason()
     })
   
   #year wise Table
  output$view<-renderTable({
-   head(showyear(),obs=isolate(input$Year))
+   showyear()
   })
   
   
